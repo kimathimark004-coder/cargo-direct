@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="Cargo Direct — a Rust CLI tool to manage Cargo dependencies faster from the terminal."
+    />
+    <title>Cargo Direct — Rust Cargo dependency CLI</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b1020;
+        --panel: rgba(255, 255, 255, 0.06);
+        --panel-2: rgba(255, 255, 255, 0.08);
+        --border: rgba(255, 255, 255, 0.12);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.66);
+        --muted-2: rgba(255, 255, 255, 0.52);
+        --accent: #7c5cff;
+        --accent-2: #39d98a;
+        --danger: #ff5c7a;
+        --shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
+        --radius: 16px;
+        --radius-sm: 12px;
+        --max: 1100px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        height: 100%;
+      }
+
+      body {
+        margin: 0;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+          Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        background:
+          radial-gradient(1200px 600px at 15% 10%, rgba(124, 92, 255, 0.22), transparent 60%),
+          radial-gradient(900px 500px at 85% 15%, rgba(57, 217, 138, 0.16), transparent 55%),
+          radial-gradient(700px 420px at 70% 80%, rgba(255, 92, 122, 0.11), transparent 55%),
+          linear-gradient(180deg, #070a15 0%, var(--bg) 40%, #070a15 100%);
+        color: var(--text);
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .wrap {
+        max-width: var(--max);
+        margin: 0 auto;
+        padding: 28px 20px 64px;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 10px 0 22px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+      }
+
+      .logo {
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        background:
+          linear-gradient(135deg, rgba(124, 92, 255, 0.95), rgba(57, 217, 138, 0.75));
+        box-shadow: 0 10px 30px rgba(124, 92, 255, 0.18);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .logo::after {
+        content: "";
+        position: absolute;
+        inset: -40%;
+        background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.55), transparent 52%);
+        transform: rotate(18deg);
+        opacity: 0.55;
+      }
+
+      nav {
+        display: flex;
+        gap: 14px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      nav a {
+        font-size: 14px;
+        color: var(--muted);
+        padding: 8px 10px;
+        border-radius: 10px;
+      }
+
+      nav a:hover {
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: 1.2fr 0.8fr;
+        gap: 22px;
+        align-items: start;
+        margin-top: 6px;
+      }
+
+      .hero-card {
+        padding: 26px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.05));
+        box-shadow: var(--shadow);
+        overflow: hidden;
+        position: relative;
+      }
+
+      .hero-card::before {
+        content: "";
+        position: absolute;
+        inset: -2px;
+        background: radial-gradient(900px 280px at 20% 0%, rgba(124, 92, 255, 0.23), transparent 60%);
+        pointer-events: none;
+      }
+
+      .kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 13px;
+        color: var(--muted);
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        padding: 7px 12px;
+        border-radius: 999px;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--accent-2);
+        box-shadow: 0 0 0 6px rgba(57, 217, 138, 0.12);
+      }
+
+      h1 {
+        margin: 14px 0 10px;
+        font-size: clamp(34px, 4.2vw, 54px);
+        line-height: 1.05;
+        letter-spacing: -0.9px;
+      }
+
+      .tagline {
+        font-size: 18px;
+        color: var(--muted);
+        margin: 0 0 12px;
+      }
+
+      .desc {
+        margin: 0;
+        color: var(--muted-2);
+        line-height: 1.65;
+        font-size: 15px;
+        max-width: 70ch;
+      }
+
+      .actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 18px;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 11px 14px;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 14px;
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.06);
+        color: var(--text);
+        transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+      }
+
+      .btn:hover {
+        transform: translateY(-1px);
+        background: rgba(255, 255, 255, 0.08);
+        border-color: rgba(255, 255, 255, 0.16);
+      }
+
+      .btn.primary {
+        border-color: rgba(124, 92, 255, 0.55);
+        background: linear-gradient(135deg, rgba(124, 92, 255, 0.92), rgba(124, 92, 255, 0.56));
+        box-shadow: 0 18px 50px rgba(124, 92, 255, 0.18);
+      }
+
+      .btn.primary:hover {
+        border-color: rgba(124, 92, 255, 0.7);
+      }
+
+      .aside {
+        padding: 18px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      .aside h3 {
+        margin: 6px 0 8px;
+        font-size: 14px;
+        color: var(--text);
+        letter-spacing: 0.2px;
+      }
+
+      .aside p {
+        margin: 0;
+        color: var(--muted-2);
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .stat {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .pill {
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        background: rgba(255, 255, 255, 0.04);
+        padding: 10px 12px;
+      }
+
+      .pill b {
+        display: block;
+        font-size: 13px;
+        color: var(--text);
+      }
+
+      .pill span {
+        display: block;
+        font-size: 12px;
+        color: var(--muted-2);
+        margin-top: 2px;
+      }
+
+      section {
+        margin-top: 26px;
+        padding: 22px;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      section h2 {
+        margin: 0 0 10px;
+        font-size: 18px;
+        letter-spacing: -0.2px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-top: 14px;
+      }
+
+      .card {
+        border-radius: var(--radius-sm);
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.035));
+        padding: 14px;
+        min-height: 110px;
+      }
+
+      .card .title {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 700;
+        font-size: 14px;
+      }
+
+      .icon {
+        width: 34px;
+        height: 34px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .card p {
+        margin: 10px 0 0;
+        font-size: 13px;
+        color: var(--muted-2);
+        line-height: 1.55;
+      }
+
+      pre {
+        margin: 12px 0 0;
+        padding: 14px 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        background: rgba(7, 10, 21, 0.75);
+        overflow: auto;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+      }
+
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+          "Courier New", monospace;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.88);
+      }
+
+      .hint {
+        margin: 10px 0 0;
+        font-size: 13px;
+        color: var(--muted-2);
+      }
+
+      .about {
+        display: grid;
+        grid-template-columns: 1fr 0.9fr;
+        gap: 12px;
+        align-items: start;
+      }
+
+      .about .box {
+        padding: 14px;
+        border-radius: 14px;
+        border: 1px solid rgba(255, 255, 255, 0.10);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      footer {
+        margin-top: 20px;
+        padding: 18px 0 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .sep {
+        height: 1px;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.08);
+        margin-top: 18px;
+      }
+
+      @media (max-width: 880px) {
+        .hero {
+          grid-template-columns: 1fr;
+        }
+        .grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        .about {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 520px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+        header {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <a class="brand" href="#top" aria-label="Cargo Direct home">
+          <span class="logo" aria-hidden="true"></span>
+          <span>Cargo Direct</span>
+        </a>
+        <nav aria-label="Primary">
+          <a href="#features">Features</a>
+          <a href="#install">Installation</a>
+          <a href="#usage">Usage</a>
+          <a href="#about">About</a>
+        </nav>
+      </header>
+
+      <div id="top" class="hero">
+        <div class="hero-card">
+          <div class="kicker"><span class="dot"></span> Rust CLI developer tool</div>
+          <h1>Cargo Direct</h1>
+          <p class="tagline">Manage Rust Cargo dependencies faster from the terminal.</p>
+          <p class="desc">
+            Cargo Direct is a focused command-line tool that makes dependency management
+            feel instant—add common crates, keep your workflow tight, and stay in the terminal.
+          </p>
+          <div class="actions">
+            <a class="btn primary" href="https://github.com/your-org/cargo-direct" target="_blank" rel="noreferrer">
+              View on GitHub
+            </a>
+            <a class="btn" href="#install">
+              Install with Cargo
+            </a>
+          </div>
+          <p class="hint">
+            Tip: Replace the GitHub link with your real repo URL.
+          </p>
+        </div>
+
+        <aside class="aside" aria-label="Quick info">
+          <h3>Built for Rust developers</h3>
+          <p>
+            A lightweight tool that complements Cargo by optimizing the most common dependency tasks.
+          </p>
+          <div class="stat">
+            <div class="pill">
+              <b>Fast</b>
+              <span>Quick dependency actions</span>
+            </div>
+            <div class="pill">
+              <b>Simple</b>
+              <span>Clean, memorable commands</span>
+            </div>
+            <div class="pill">
+              <b>Rust</b>
+              <span>Small, portable binary</span>
+            </div>
+            <div class="pill">
+              <b>OSS</b>
+              <span>Open-source friendly</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <section id="features">
+        <h2>Features</h2>
+        <p class="desc">
+          Everything you need to speed up dependency management without changing how you build.
+        </p>
+        <div class="grid">
+          <div class="card">
+            <div class="title">
+              <span class="icon" aria-hidden="true">⚡</span>
+              Fast dependency installation
+            </div>
+            <p>Minimize friction when adding crates to your project—stay in flow.</p>
+          </div>
+          <div class="card">
+            <div class="title">
+              <span class="icon" aria-hidden="true">⌘</span>
+              Simple CLI commands
+            </div>
+            <p>Ergonomic commands designed for day-to-day Rust development.</p>
+          </div>
+          <div class="card">
+            <div class="title">
+              <span class="icon" aria-hidden="true">🦀</span>
+              Lightweight Rust tool
+            </div>
+            <p>Compiled native binary—fast startup, minimal overhead.</p>
+          </div>
+          <div class="card">
+            <div class="title">
+              <span class="icon" aria-hidden="true">🧠</span>
+              Improves developer workflow
+            </div>
+            <p>Focus on building. Cargo Direct handles the dependency busywork.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="install">
+        <h2>Installation</h2>
+        <p class="desc">Install Cargo Direct from crates.io with one command.</p>
+        <pre><code>cargo install cargo-direct</code></pre>
+      </section>
+
+      <section id="usage">
+        <h2>Usage</h2>
+        <p class="desc">Add a dependency directly from the terminal.</p>
+        <pre><code>cargo direct add serde</code></pre>
+        <p class="hint">
+          Cargo Direct is designed to be predictable: common actions have short, readable commands.
+        </p>
+      </section>
+
+      <section id="about">
+        <h2>About</h2>
+        <div class="about">
+          <div class="box">
+            <p class="desc">
+              Cargo Direct is an open-source project built using Rust to simplify dependency
+              management for Cargo-based projects. It’s meant to feel like a natural extension of
+              your existing workflow—fast, focused, and terminal-first.
+            </p>
+          </div>
+          <div class="box">
+            <p class="desc">
+              Want to contribute? Open an issue, suggest features, or submit a PR on GitHub.
+            </p>
+            <div class="actions" style="margin-top: 12px;">
+              <a class="btn" href="https://github.com/your-org/cargo-direct" target="_blank" rel="noreferrer">
+                GitHub repository
+              </a>
+              <a class="btn" href="#install">Get started</a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="sep" role="separator" aria-hidden="true"></div>
+      <footer>
+        <span>
+          <a href="https://github.com/your-org/cargo-direct" target="_blank" rel="noreferrer">
+            GitHub
+          </a>
+          · Author: Your Name · Open-source (MIT/Apache-2.0)
+        </span>
+        <span>© <span id="y"></span> Cargo Direct</span>
+      </footer>
+    </div>
+
+    <script>
+      // Keep year accurate without affecting layout.
+      document.getElementById("y").textContent = String(new Date().getFullYear());
+    </script>
+  </body>
+</html>
+
